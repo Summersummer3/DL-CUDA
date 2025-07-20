@@ -8,6 +8,46 @@ import torch
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import platform
+
+# 设置中文字体
+def setup_chinese_font():
+    """设置中文字体支持"""
+    system = platform.system()
+    
+    if system == "Windows":
+        # Windows系统字体
+        font_list = ['SimHei', 'Microsoft YaHei', 'SimSun', 'KaiTi']
+    elif system == "Darwin":  # macOS
+        font_list = ['PingFang SC', 'Hiragino Sans GB', 'STHeiti']
+    else:  # Linux
+        font_list = ['WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'DejaVu Sans']
+    
+    # 尝试设置字体
+    font_found = False
+    for font_name in font_list:
+        try:
+            plt.rcParams['font.sans-serif'] = [font_name]
+            plt.rcParams['axes.unicode_minus'] = False
+            # 测试字体是否可用
+            test_fig, test_ax = plt.subplots()
+            test_ax.text(0.5, 0.5, '测试', fontsize=12)
+            plt.close(test_fig)
+            font_found = True
+            print(f"✓ 成功设置中文字体: {font_name}")
+            break
+        except:
+            continue
+    
+    if not font_found:
+        print("⚠ 未找到合适的中文字体，图表中的中文可能无法正确显示")
+        # 使用默认字体，但禁用中文
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False
+
+# 初始化中文字体
+setup_chinese_font()
 
 def print_device_info():
     """打印设备信息"""
@@ -99,8 +139,13 @@ def matrix_operations_benchmark():
         print(f"  CPU时间: {cpu_time:.4f} 秒")
         
         if torch.cuda.is_available():
-            speedup = cpu_time / gpu_time
-            print(f"  加速比: {speedup:.2f}x")
+            # 避免除零错误
+            if gpu_time > 0:
+                speedup = cpu_time / gpu_time
+                print(f"  加速比: {speedup:.2f}x")
+            else:
+                speedup = float('inf')
+                print(f"  加速比: 无限大 (GPU时间过短)")
         print()
     
     # 绘制性能对比图
@@ -116,7 +161,13 @@ def matrix_operations_benchmark():
         plt.grid(True)
         
         plt.subplot(1, 2, 2)
-        speedups = [cpu/gpu for cpu, gpu in zip(cpu_times, gpu_times)]
+        # 避免除零错误
+        speedups = []
+        for cpu, gpu in zip(cpu_times, gpu_times):
+            if gpu > 0:
+                speedups.append(cpu/gpu)
+            else:
+                speedups.append(1000)  # 将无限大替换为1000用于绘图
         plt.plot(sizes, speedups, 'g-o')
         plt.xlabel('矩阵大小')
         plt.ylabel('加速比')

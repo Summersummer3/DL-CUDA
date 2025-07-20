@@ -11,7 +11,49 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from torch.utils.data import DataLoader, TensorDataset
 import warnings
+import matplotlib.font_manager as fm
+import platform
 warnings.filterwarnings('ignore')
+
+# 设置中文字体
+def setup_chinese_font():
+    """设置中文字体支持"""
+    system = platform.system()
+    
+    if system == "Windows":
+        # Windows系统字体
+        font_list = ['SimHei', 'Microsoft YaHei', 'SimSun', 'KaiTi']
+    elif system == "Darwin":  # macOS
+        font_list = ['PingFang SC', 'Hiragino Sans GB', 'STHeiti']
+    else:  # Linux
+        font_list = ['WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'DejaVu Sans']
+    
+    # 尝试设置字体
+    font_found = False
+    for font_name in font_list:
+        try:
+            plt.rcParams['font.sans-serif'] = [font_name]
+            plt.rcParams['axes.unicode_minus'] = False
+            # 测试字体是否可用
+            test_fig, test_ax = plt.subplots()
+            test_ax.text(0.5, 0.5, '测试', fontsize=12)
+            plt.close(test_fig)
+            font_found = True
+            print(f"✓ 成功设置中文字体: {font_name}")
+            break
+        except:
+            continue
+    
+    if not font_found:
+        print("⚠ 未找到合适的中文字体，图表中的中文可能无法正确显示")
+        # 使用默认字体，但禁用中文
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False
+    
+    # 设置负号显示
+    plt.rcParams['axes.unicode_minus'] = False
+# 初始化中文字体
+setup_chinese_font()
 
 def print_system_info():
     """打印系统信息"""
@@ -430,11 +472,11 @@ def benchmark_memory_bandwidth():
 
 def plot_results(matrix_results, conv_results, nn_results, element_results, sort_results, bandwidth_results):
     """绘制结果图表"""
-    try:
-        plt.style.use('seaborn-v0_8')
-    except:
-        plt.style.use('default')
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    # 重新设置中文字体，确保在绘图时生效
+    setup_chinese_font()
+    
+    # 使用与tensor_operations.py相同的绘图方式
+    plt.figure(figsize=(18, 12))
     
     # 处理无限大值，用于绘图
     def filter_infinite_speedups(speedups):
@@ -442,80 +484,80 @@ def plot_results(matrix_results, conv_results, nn_results, element_results, sort
     
     # 矩阵运算结果
     if matrix_results['size']:
-        ax = axes[0, 0]
-        ax.plot(matrix_results['size'], matrix_results['cpu_time'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(matrix_results['size'], matrix_results['gpu_time'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('矩阵大小')
-        ax.set_ylabel('时间 (秒)')
-        ax.set_title('矩阵乘法性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        plt.subplot(2, 3, 1)
+        plt.plot(matrix_results['size'], matrix_results['cpu_time'], 'b-o', label='CPU')
+        plt.plot(matrix_results['size'], matrix_results['gpu_time'], 'r-o', label='GPU')
+        plt.xlabel('矩阵大小')
+        plt.ylabel('时间 (秒)')
+        plt.title('矩阵乘法性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
     
     # 卷积运算结果
     if conv_results['batch_size']:
-        ax = axes[0, 1]
-        ax.plot(conv_results['batch_size'], conv_results['cpu_time'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(conv_results['batch_size'], conv_results['gpu_time'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('批次大小')
-        ax.set_ylabel('时间 (秒)')
-        ax.set_title('卷积运算性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        plt.subplot(2, 3, 2)
+        plt.plot(conv_results['batch_size'], conv_results['cpu_time'], 'b-o', label='CPU')
+        plt.plot(conv_results['batch_size'], conv_results['gpu_time'], 'r-o', label='GPU')
+        plt.xlabel('批次大小')
+        plt.ylabel('时间 (秒)')
+        plt.title('卷积运算性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
     
     # 神经网络训练结果
     if nn_results['batch_size']:
-        ax = axes[0, 2]
-        ax.plot(nn_results['batch_size'], nn_results['cpu_time'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(nn_results['batch_size'], nn_results['gpu_time'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('批次大小')
-        ax.set_ylabel('时间 (秒)')
-        ax.set_title('神经网络训练性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        plt.subplot(2, 3, 3)
+        plt.plot(nn_results['batch_size'], nn_results['cpu_time'], 'b-o', label='CPU')
+        plt.plot(nn_results['batch_size'], nn_results['gpu_time'], 'r-o', label='GPU')
+        plt.xlabel('批次大小')
+        plt.ylabel('时间 (秒)')
+        plt.title('神经网络训练性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
     
     # 元素级运算结果
     if element_results['size']:
-        ax = axes[1, 0]
-        ax.plot(element_results['size'], element_results['cpu_time'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(element_results['size'], element_results['gpu_time'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('向量大小')
-        ax.set_ylabel('时间 (秒)')
-        ax.set_title('元素级运算性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        plt.subplot(2, 3, 4)
+        plt.plot(element_results['size'], element_results['cpu_time'], 'b-o', label='CPU')
+        plt.plot(element_results['size'], element_results['gpu_time'], 'r-o', label='GPU')
+        plt.xlabel('向量大小')
+        plt.ylabel('时间 (秒)')
+        plt.title('元素级运算性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
     
     # 排序运算结果
     if sort_results['size']:
-        ax = axes[1, 1]
-        ax.plot(sort_results['size'], sort_results['cpu_time'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(sort_results['size'], sort_results['gpu_time'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('数组大小')
-        ax.set_ylabel('时间 (秒)')
-        ax.set_title('排序运算性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        plt.subplot(2, 3, 5)
+        plt.plot(sort_results['size'], sort_results['cpu_time'], 'b-o', label='CPU')
+        plt.plot(sort_results['size'], sort_results['gpu_time'], 'r-o', label='GPU')
+        plt.xlabel('数组大小')
+        plt.ylabel('时间 (秒)')
+        plt.title('排序运算性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
     
     # 内存带宽结果
     if bandwidth_results and bandwidth_results['size']:
-        ax = axes[1, 2]
-        ax.plot(bandwidth_results['size'], bandwidth_results['cpu_bandwidth'], 'b-o', label='CPU', linewidth=2, markersize=6)
-        ax.plot(bandwidth_results['size'], bandwidth_results['gpu_bandwidth'], 'r-o', label='GPU', linewidth=2, markersize=6)
-        ax.set_xlabel('数据大小')
-        ax.set_ylabel('带宽 (GB/s)')
-        ax.set_title('内存带宽性能')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.set_xscale('log')
+        plt.subplot(2, 3, 6)
+        plt.plot(bandwidth_results['size'], bandwidth_results['cpu_bandwidth'], 'b-o', label='CPU')
+        plt.plot(bandwidth_results['size'], bandwidth_results['gpu_bandwidth'], 'r-o', label='GPU')
+        plt.xlabel('数据大小')
+        plt.ylabel('带宽 (GB/s)')
+        plt.title('内存带宽性能')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
     
     plt.tight_layout()
     plt.savefig('gpu_performance_benchmark.png', dpi=300, bbox_inches='tight')
